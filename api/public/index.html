@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stocks — La Maison du Saucisson</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Mono:wght@400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --cream: #F5EDD8;
+    --parchment: #EDE0C4;
+    --rust: #A63A2A;
+    --rust-light: #C4533F;
+    --brown: #5C3D2E;
+    --brown-light: #7A5544;
+    --gold: #C9933A;
+    --gold-light: #E0B05A;
+    --green: #3D6B4F;
+    --green-light: #4E8864;
+    --ink: #2A1F15;
+    --ink-soft: #5C4A38;
+    --warn: #D4831A;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: 'Lato', sans-serif;
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse at 10% 20%, rgba(166,58,42,0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(92,61,46,0.08) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%235C3D2E' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  /* HEADER */
+  header {
+    padding: 36px 48px 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid rgba(92,61,46,0.18);
+  }
+
+  .brand {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .brand-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brown-light);
+  }
+
+  .brand-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--rust);
+    line-height: 1;
+  }
+
+  .header-meta {
+    text-align: right;
+  }
+
+  .last-sync {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--brown-light);
+    margin-bottom: 8px;
+  }
+
+  .sync-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--rust);
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    font-family: 'Lato', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .sync-btn:hover { background: var(--rust-light); }
+  .sync-btn svg { width: 14px; height: 14px; }
+
+  /* KPI ROW */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-bottom: 2px solid rgba(92,61,46,0.18);
+  }
+
+  .kpi {
+    padding: 28px 36px;
+    border-right: 1px solid rgba(92,61,46,0.14);
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  .kpi:last-child { border-right: none; }
+
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+  }
+  .kpi.ok::before { background: var(--green); }
+  .kpi.warn::before { background: var(--warn); }
+  .kpi.danger::before { background: var(--rust); }
+  .kpi.neutral::before { background: var(--gold); }
+
+  .kpi-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--brown-light);
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--ink);
+  }
+  .kpi.danger .kpi-value { color: var(--rust); }
+  .kpi.warn .kpi-value { color: var(--warn); }
+
+  .kpi-sub {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  /* MAIN GRID */
+  .main {
+    padding: 40px 48px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 40px;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brown);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(92,61,46,0.2);
+  }
+
+  /* PRODUCT TABLE */
+  .product-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .product-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--brown-light);
+    text-align: left;
+    padding: 0 16px 12px;
+    border-bottom: 2px solid rgba(92,61,46,0.18);
+  }
+  .product-table th:last-child { text-align: right; }
+
+  .product-row {
+    animation: fadeUp 0.4s ease both;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .product-row:hover { background: rgba(92,61,46,0.04); }
+
+  .product-row td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(92,61,46,0.10);
+    vertical-align: middle;
+  }
+
+  .prod-name {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .prod-sku {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--brown-light);
+    margin-top: 2px;
+  }
+
+  .prod-category {
+    font-size: 12px;
+    color: var(--ink-soft);
+    background: rgba(92,61,46,0.08);
+    padding: 3px 8px;
+    display: inline-block;
+  }
+
+  /* STOCK BAR */
+  .stock-cell { min-width: 160px; }
+  .stock-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .stock-bar-bg {
+    flex: 1;
+    height: 8px;
+    background: rgba(92,61,46,0.12);
+    border-radius: 0;
+    overflow: hidden;
+  }
+  .stock-bar-fill {
+    height: 100%;
+    border-radius: 0;
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+  }
+  .bar-ok { background: var(--green); }
+  .bar-warn { background: var(--warn); }
+  .bar-danger { background: var(--rust); }
+
+  .stock-qty {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  /* STATUS BADGE */
+  .badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    font-weight: 500;
+  }
+  .badge-ok { background: rgba(61,107,79,0.12); color: var(--green); }
+  .badge-warn { background: rgba(212,131,26,0.12); color: var(--warn); }
+  .badge-danger { background: rgba(166,58,42,0.12); color: var(--rust); }
+
+  .trend {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    text-align: right;
+  }
+  .trend-down { color: var(--rust); }
+  .trend-up { color: var(--green); }
+
+  /* SIDEBAR */
+  .sidebar { display: flex; flex-direction: column; gap: 28px; }
+
+  .panel {
+    background: rgba(255,255,255,0.45);
+    border: 1px solid rgba(92,61,46,0.16);
+    padding: 24px;
+    backdrop-filter: blur(4px);
+    animation: fadeUp 0.6s ease both;
+  }
+
+  /* ALERTS */
+  .alert-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .alert-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    border-left: 3px solid;
+    background: rgba(255,255,255,0.4);
+  }
+  .alert-item.danger { border-color: var(--rust); }
+  .alert-item.warn { border-color: var(--warn); }
+
+  .alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+  .alert-text strong {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .alert-text span {
+    font-size: 11px;
+    color: var(--ink-soft);
+  }
+
+  /* MINI CHART */
+  .mini-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 60px;
+    margin-top: 12px;
+  }
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    justify-content: flex-end;
+  }
+  .bar-col-fill {
+    width: 100%;
+    background: var(--rust);
+    opacity: 0.7;
+    transition: height 0.6s ease;
+  }
+  .bar-col-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--brown-light);
+  }
+
+  /* CONNECT SHOPIFY */
+  .connect-box {
+    background: var(--rust);
+    color: white;
+    padding: 20px;
+    margin: 0 48px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    animation: fadeUp 0.3s ease both;
+  }
+  .connect-box p { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+  .connect-box strong { font-size: 15px; }
+  .connect-cta {
+    background: white;
+    color: var(--rust);
+    border: none;
+    padding: 10px 20px;
+    font-family: 'Lato', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+  }
+  .connect-cta:hover { opacity: 0.85; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border: 1px solid rgba(92,61,46,0.25);
+    background: transparent;
+    color: var(--brown);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--brown);
+    color: var(--cream);
+    border-color: var(--brown);
+  }
+
+  @media (max-width: 1100px) {
+    .main { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    header, .main, .connect-box { padding-left: 24px; padding-right: 24px; }
+    .connect-box { margin: 0 24px 32px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="brand-label">Tableau de bord — Stocks</span>
+    <h1 class="brand-title">La Maison du Saucisson</h1>
+  </div>
+  <div class="header-meta">
+    <div class="last-sync" id="syncTime">Dernière sync : —</div>
+    <button class="sync-btn" onclick="refreshData()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+      Actualiser
+    </button>
+  </div>
+</header>
+
+<!-- CONNECT BANNER -->
+<div class="connect-box" id="connectBanner">
+  <div>
+    <strong>🔌 Connecter votre boutique Shopify</strong>
+    <p>Entrez votre domaine Shopify et clé API pour synchroniser les vrais stocks en temps réel.</p>
+  </div>
+  <button class="connect-cta" onclick="showConnectModal()">Connecter Shopify →</button>
+</div>
+
+<!-- KPI ROW -->
+<div class="kpi-row">
+  <div class="kpi neutral">
+    <div class="kpi-label">Produits actifs</div>
+    <div class="kpi-value" id="kpi-total">—</div>
+    <div class="kpi-sub">références en catalogue</div>
+  </div>
+  <div class="kpi ok">
+    <div class="kpi-label">En stock</div>
+    <div class="kpi-value" id="kpi-ok">—</div>
+    <div class="kpi-sub">niveaux satisfaisants</div>
+  </div>
+  <div class="kpi warn">
+    <div class="kpi-label">Stock faible</div>
+    <div class="kpi-value" id="kpi-warn">—</div>
+    <div class="kpi-sub">à réapprovisionner bientôt</div>
+  </div>
+  <div class="kpi danger">
+    <div class="kpi-label">Rupture imminente</div>
+    <div class="kpi-value" id="kpi-danger">—</div>
+    <div class="kpi-sub">action requise</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div>
+    <h2 class="section-title">Tous les produits</h2>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterProducts('all', this)">Tous</button>
+      <button class="filter-btn" onclick="filterProducts('danger', this)">⚠ Ruptures</button>
+      <button class="filter-btn" onclick="filterProducts('warn', this)">Stock faible</button>
+      <button class="filter-btn" onclick="filterProducts('ok', this)">OK</button>
+    </div>
+
+    <table class="product-table">
+      <thead>
+        <tr>
+          <th>Produit</th>
+          <th>Catégorie</th>
+          <th class="stock-cell">Stock</th>
+          <th>Statut</th>
+          <th>Tendance</th>
+        </tr>
+      </thead>
+      <tbody id="productTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="panel">
+      <h2 class="section-title" style="font-size:16px">🚨 Alertes prioritaires</h2>
+      <div class="alert-list" id="alertList"></div>
+    </div>
+
+    <div class="panel">
+      <h2 class="section-title" style="font-size:16px">📦 Ventes / 7 jours</h2>
+      <div class="mini-chart" id="miniChart"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SHOPIFY -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:100;align-items:center;justify-content:center;">
+  <div style="background:var(--cream);padding:36px;max-width:440px;width:90%;border:2px solid var(--rust);">
+    <h3 style="font-family:'Playfair Display',serif;font-size:22px;color:var(--rust);margin-bottom:8px">Connexion Shopify</h3>
+    <p style="font-size:13px;color:var(--ink-soft);margin-bottom:24px">Renseignez vos identifiants pour synchroniser vos stocks en direct.</p>
+    <label style="display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--brown-light);margin-bottom:6px">Domaine Shopify</label>
+    <input id="shopifyDomain" placeholder="votre-boutique.myshopify.com" style="width:100%;padding:10px 14px;border:1px solid rgba(92,61,46,0.3);background:white;font-family:'Lato',sans-serif;font-size:14px;margin-bottom:16px;outline:none;">
+    <label style="display:block;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--brown-light);margin-bottom:6px">Clé API (Storefront / Admin)</label>
+    <input id="shopifyKey" type="password" placeholder="shpat_xxxxxxxxxxxxxxxx" style="width:100%;padding:10px 14px;border:1px solid rgba(92,61,46,0.3);background:white;font-family:'Lato',sans-serif;font-size:14px;margin-bottom:24px;outline:none;">
+    <div style="display:flex;gap:12px">
+      <button onclick="connectShopify()" style="flex:1;background:var(--rust);color:white;border:none;padding:12px;font-family:'Lato',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">Connecter</button>
+      <button onclick="closeModal()" style="padding:12px 20px;background:transparent;border:1px solid rgba(92,61,46,0.3);font-family:'Lato',sans-serif;cursor:pointer;color:var(--brown);">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── DONNÉES DE DÉMONSTRATION ──────────────────────────────────────────
+  const SEUIL_DANGER = 10;
+  const SEUIL_WARN = 25;
+  const STOCK_MAX = 100; // référence pour la barre
+
+  const demoProducts = [
+    { name: "Saucisson Sec de l'Ardèche", sku: "SAU-001", category: "Sec", stock: 4, trend: -8 },
+    { name: "Rosette de Lyon AOP", sku: "ROS-002", category: "Rosette", stock: 7, trend: -12 },
+    { name: "Jésus de Lyon", sku: "JES-003", category: "Sec", stock: 18, trend: -3 },
+    { name: "Saucisson à l'Ail", sku: "AIL-004", category: "Cuit", stock: 32, trend: +5 },
+    { name: "Chorizo Fort Ibérique", sku: "CHO-005", category: "Chorizo", stock: 9, trend: -15 },
+    { name: "Saucisson Basque Piment d'Espelette", sku: "BAS-006", category: "Sec", stock: 45, trend: +2 },
+    { name: "Lonzo Corse", sku: "LON-007", category: "Corse", stock: 6, trend: -20 },
+    { name: "Saucisson aux Noix", sku: "NOI-008", category: "Sec", stock: 55, trend: +8 },
+    { name: "Mortadelle Truffée", sku: "MOR-009", category: "Cuit", stock: 22, trend: -4 },
+    { name: "Figatelli Corse", sku: "FIG-010", category: "Corse", stock: 3, trend: -25 },
+    { name: "Salami Milano", sku: "SAL-011", category: "Salami", stock: 70, trend: +12 },
+    { name: "Coppa Toscane", sku: "COP-012", category: "Corse", stock: 14, trend: -6 },
+  ];
+
+  const weekSales = [42, 38, 55, 61, 49, 73, 58];
+  const weekLabels = ["Lu", "Ma", "Me", "Je", "Ve", "Sa", "Di"];
+
+  let currentFilter = 'all';
+
+  function getStatus(stock) {
+    if (stock <= SEUIL_DANGER) return 'danger';
+    if (stock <= SEUIL_WARN) return 'warn';
+    return 'ok';
+  }
+
+  function renderKPIs(products) {
+    const total = products.length;
+    const danger = products.filter(p => getStatus(p.stock) === 'danger').length;
+    const warn = products.filter(p => getStatus(p.stock) === 'warn').length;
+    const ok = products.filter(p => getStatus(p.stock) === 'ok').length;
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-ok').textContent = ok;
+    document.getElementById('kpi-warn').textContent = warn;
+    document.getElementById('kpi-danger').textContent = danger;
+  }
+
+  function renderAlerts(products) {
+    const alerts = products
+      .filter(p => getStatus(p.stock) !== 'ok')
+      .sort((a, b) => a.stock - b.stock)
+      .slice(0, 5);
+    const el = document.getElementById('alertList');
+    el.innerHTML = alerts.map(p => {
+      const s = getStatus(p.stock);
+      return `<div class="alert-item ${s}">
+        <span class="alert-icon">${s === 'danger' ? '🔴' : '🟠'}</span>
+        <div class="alert-text">
+          <strong>${p.name}</strong>
+          <span>${p.stock} unité${p.stock > 1 ? 's' : ''} restante${p.stock > 1 ? 's' : ''} · Tendance ${p.trend > 0 ? '+' : ''}${p.trend}/sem</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderMiniChart() {
+    const max = Math.max(...weekSales);
+    const el = document.getElementById('miniChart');
+    el.innerHTML = weekSales.map((v, i) => `
+      <div class="bar-col">
+        <div class="bar-col-fill" style="height:${Math.round((v/max)*52)}px"></div>
+        <div class="bar-col-label">${weekLabels[i]}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderTable(products) {
+    const filtered = currentFilter === 'all'
+      ? products
+      : products.filter(p => getStatus(p.stock) === currentFilter);
+
+    const body = document.getElementById('productTableBody');
+    body.innerHTML = filtered.map((p, i) => {
+      const s = getStatus(p.stock);
+      const pct = Math.min(100, Math.round((p.stock / STOCK_MAX) * 100));
+      const barClass = s === 'ok' ? 'bar-ok' : s === 'warn' ? 'bar-warn' : 'bar-danger';
+      const badge = s === 'ok' ? 'badge-ok' : s === 'warn' ? 'badge-warn' : 'badge-danger';
+      const badgeText = s === 'ok' ? 'OK' : s === 'warn' ? 'Faible' : 'Critique';
+      const trendClass = p.trend >= 0 ? 'trend-up' : 'trend-down';
+      const trendText = (p.trend >= 0 ? '↑ +' : '↓ ') + p.trend + '/sem';
+      return `<tr class="product-row" style="animation-delay:${i * 0.04}s">
+        <td>
+          <div class="prod-name">${p.name}</div>
+          <div class="prod-sku">${p.sku}</div>
+        </td>
+        <td><span class="prod-category">${p.category}</span></td>
+        <td class="stock-cell">
+          <div class="stock-bar-wrap">
+            <div class="stock-bar-bg"><div class="stock-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+            <span class="stock-qty">${p.stock}</span>
+          </div>
+        </td>
+        <td><span class="badge ${badge}">${badgeText}</span></td>
+        <td><span class="trend ${trendClass}">${trendText}</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterProducts(type, btn) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable(demoProducts);
+  }
+
+  function refreshData() {
+    const now = new Date();
+    document.getElementById('syncTime').textContent =
+      `Dernière sync : ${now.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}`;
+    renderAll();
+  }
+
+  function renderAll() {
+    renderKPIs(demoProducts);
+    renderTable(demoProducts);
+    renderAlerts(demoProducts);
+    renderMiniChart();
+  }
+
+  // ── SHOPIFY REAL API ─────────────────────────────────────────────────
+  let realProducts = [];
+
+  async function fetchShopifyProducts() {
+    try {
+      const res = await fetch('/api/stocks');
+      if (!res.ok) throw new Error('Erreur API: ' + res.status);
+      const data = await res.json();
+      return data.products;
+    } catch (e) {
+      console.error('Shopify API error:', e);
+      return null;
+    }
+  }
+
+  function showConnectModal() { document.getElementById('modal').style.display = 'flex'; }
+  function closeModal() { document.getElementById('modal').style.display = 'none'; }
+  function connectShopify() { closeModal(); }
+
+  // ── INIT ──────────────────────────────────────────────────────────────
+  async function init() {
+    document.getElementById('connectBanner').style.display = 'none';
+    document.getElementById('syncTime').textContent = 'Chargement des stocks Shopify…';
+
+    const shopifyData = await fetchShopifyProducts();
+    if (shopifyData && shopifyData.length > 0) {
+      realProducts = shopifyData;
+      // Remplace les données démo par les vraies
+      demoProducts.length = 0;
+      shopifyData.forEach(p => demoProducts.push(p));
+      document.getElementById('connectBanner').style.display = 'none';
+    } else {
+      // Fallback sur les données démo
+      document.getElementById('connectBanner').innerHTML = `
+        <div><strong>⚠️ Impossible de charger les stocks Shopify</strong>
+        <p>Vérifiez les permissions de l'API. Affichage des données de démonstration.</p></div>`;
+      document.getElementById('connectBanner').style.display = 'flex';
+    }
+
+    renderAll();
+    refreshData();
+  }
+
+  init();
+</script>
+</body>
+</html>
